@@ -27,14 +27,16 @@ export const individualRegistrationSchema = Joi.object({
   profilePicture: Joi.string().uri().optional(),
   bio: Joi.string().optional().max(500),
   location: Joi.object({
-    city: Joi.string().required(),
-    state: Joi.string().required(),
-    country: Joi.string().required(),
-    coordinates: Joi.object({
-      lat: Joi.number().optional(),
-      lng: Joi.number().optional(),
-    }).optional(),
+    type: Joi.string().valid('Point').required(),
+    coordinates: Joi.array()
+      .items(Joi.number())
+      .length(2)
+      .required(), // [lng, lat]
   }).required(),
+  hiringSettings: Joi.object({
+    skills: Joi.array().items(Joi.string()).required(),
+    // servicesOffered: Joi.array().items(Joi.string()).required()
+}).optional(),
   userType: Joi.string().valid('individual').required(),
 });
 
@@ -71,14 +73,16 @@ export const businessRegistrationSchema = Joi.object({
   profilePicture: Joi.string().uri().optional(),
   bio: Joi.string().optional().max(1000),
   location: Joi.object({
-    city: Joi.string().required(),
-    state: Joi.string().required(),
-    country: Joi.string().required(),
-    coordinates: Joi.object({
-      lat: Joi.number().optional(),
-      lng: Joi.number().optional(),
-    }).optional(),
+    type: Joi.string().valid('Point').required(),
+    coordinates: Joi.array()
+      .items(Joi.number())
+      .length(2)
+      .required(), // [lng, lat]
   }).required(),
+  hiringSettings: Joi.object({
+    skills: Joi.array().items(Joi.string()).required(),
+    // servicesOffered: Joi.array().items(Joi.string()).required()
+}).optional(),
   website: Joi.string().uri().optional(),
   userType: Joi.string().valid('business').required(),
 });
@@ -107,14 +111,16 @@ const commonUserFields = {
   profilePicture: Joi.string().uri().optional(),
   bio: Joi.string().optional().max(500),
   location: Joi.object({
-    city: Joi.string().required(),
-    state: Joi.string().required(),
-    country: Joi.string().required(),
-    coordinates: Joi.object({
-      lat: Joi.number().optional(),
-      lng: Joi.number().optional(),
-    }).optional(),
+    type: Joi.string().valid('Point').required(),
+    coordinates: Joi.array()
+      .items(Joi.number())
+      .length(2)
+      .required(), // [lng, lat]
   }).required(),
+  hiringSettings: Joi.object({
+    skills: Joi.array().items(Joi.string()).required(),
+    // servicesOffered: Joi.array().items(Joi.string()).required()
+}).optional(),
   userType: Joi.string().valid('individual', 'business').required().messages({
     'string.empty': 'User type is required',
     'any.only': 'User type must be either individual or business',

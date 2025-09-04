@@ -6,15 +6,15 @@ export interface IBusinessUser extends Document {
   companyEmail: string;
   profilePicture?: string;
   bio?: string;
-  location: {
-    city: string;
-    state: string;
-    country: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
-  };
+  // location: {
+  //   city: string;
+  //   state: string;
+  //   country: string;
+  //   coordinates?: {
+  //     lat: number;
+  //     lng: number;
+  //   };
+  // };
   website?: string;
   isVerified: boolean;
   createdAt: Date;
@@ -34,15 +34,16 @@ const businessUserSchema = new Schema<IBusinessUser>(
     companyEmail: { type: String, required: true },
     profilePicture: { type: String },
     bio: { type: String },
-    location: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      country: { type: String, required: true },
-      coordinates: {
-        lat: { type: Number },
-        lng: { type: Number },
-      },
-    },
+    // location: {
+      
+    //   state: { type: String, required: true },
+    //   country: { type: String, required: true },
+    //   city: { type: String, required: true },
+    //   coordinates: {
+    //     lat: { type: Number },
+    //     lng: { type: Number },
+    //   },
+    // },
     website: { type: String },
     isVerified: { type: Boolean, default: false },
     version: {

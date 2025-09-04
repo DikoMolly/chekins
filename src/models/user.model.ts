@@ -11,16 +11,15 @@ export interface IUser extends Document {
   verificationCode: string;
   verificationCodeExpires: Date;
   hiringSettings: {
-    availableForHire: boolean;
-    displayRatesPublicly: boolean;
-    rates: {
-      hourly: number;
-      fixed: number;
-      currency: string;
-    };
     skills: string[];
     servicesOffered: string[];
-    preferredPaymentMethods: string[];
+  
+  };
+  profilePic?: string;
+  availability: boolean;
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [lon, lat]
   };
 }
 
@@ -40,27 +39,60 @@ const userSchema = new Schema<IUser>({
   isVerified: { type: Boolean, default: false },
   verificationCode: { type: String },
   verificationCodeExpires: { type: Date },
-  hiringSettings: {
-    availableForHire: {
-      type: Boolean,
-      default: false,
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
     },
-    displayRatesPublicly: {
-      type: Boolean,
-      default: false,
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
     },
-    rates: {
-      hourly: Number,
-      fixed: Number,
-      currency: {
-        type: String,
-        default: 'USD',
-      },
-    },
-    skills: [String],
-    servicesOffered: [String],
-    preferredPaymentMethods: [String],
   },
+
+  hiringSettings: {
+    skills: { type: [String], default: [] },
+    servicesOffered: { type: [String], default: [] },
+  },
+  // hiringSettings: {
+  //   availableForHire: {
+  //     type: Boolean,
+  //     default: false,
+  //   },
+  //   displayRatesPublicly: {
+  //     type: Boolean,
+  //     default: false,
+  //   },
+  //   rates: {
+  //     hourly: Number,
+  //     fixed: Number,
+  //     currency: {
+  //       type: String,
+  //       default: 'USD',
+  //     },
+  //   },
+  //   skills: [String],
+  //   servicesOffered: [String],
+  //   preferredPaymentMethods: [String],
+  //   // ✅ Added fields for location & availability
+  //   profilePic: { type: String },
+  //   availability: { type: Boolean, default: true }, // ON by default
+  //   location: {
+  //     type: {
+  //       type: String,
+  //       enum: ['Point'],
+  //       default: 'Point',
+  //     },
+  //     coordinates: {
+  //       type: [Number], // [longitude, latitude]
+  //       default: [0, 0],
+  //     },
+      
+  //   },
+  // },
 });
+
+userSchema.index({ location: '2dsphere' });
 
 export const user = model<IUser>('User', userSchema);

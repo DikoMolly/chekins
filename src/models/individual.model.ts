@@ -30,15 +30,15 @@ const individualUserSchema = new Schema<IIndividualUser>(
 
     profilePicture: { type: String },
     bio: { type: String },
-    location: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      country: { type: String, required: true },
-      coordinates: {
-        lat: { type: Number },
-        lng: { type: Number },
-      },
-    },
+    // location: {
+    //   city: { type: String, required: true },
+    //   state: { type: String, required: true },
+    //   country: { type: String, required: true },
+    //   coordinates: {
+    //     lat: { type: Number },
+    //     lng: { type: Number },
+    //   },
+    // },
     version: {
       type: Number,
       default: 0,

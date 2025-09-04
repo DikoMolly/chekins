@@ -12,9 +12,11 @@ import redisService from './services/redis.service';
 import { socketService } from './services/socket.service';
 import userRoutes from './routes/user.route';
 import hireRoutes from './routes/hire.route';
+import cors from "cors";
 
 // Load environment variables
 dotenv.config();
+
 
 // Import cloudinary configuration
 import './utils/cloudinary.config';
@@ -24,6 +26,7 @@ const server = http.createServer(app);
 
 import authRoutes from './routes/auth.route';
 
+app.use(cors())
 app.use(express.json());
 cleanupService.startScheduledCleanup();
 
@@ -48,6 +51,7 @@ mongoose
     app.use('/api/admin', adminRoutes);
     app.use('/api/users', userRoutes);
     app.use('/api/hire', hireRoutes);
+
 
     // Start the server
     const PORT = process.env.PORT || 3000;

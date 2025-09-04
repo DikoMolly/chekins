@@ -61,7 +61,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Extract common fields
-    const { name, email, password, profilePicture, bio, location } = req.body;
+    const { name, email, password, profilePicture, bio, location, hiringSettings } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -104,6 +104,11 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       role: role._id,
       verificationCode,
       verificationCodeExpires,
+      location,
+      hiringSettings: {
+        skills: hiringSettings?.skills || [], // ✅ Add this
+        servicesOffered: []
+      }
     });
 
     await sendVerificationEmail(email, verificationCode);
