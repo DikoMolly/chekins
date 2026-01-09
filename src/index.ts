@@ -12,6 +12,7 @@ import redisService from './services/redis.service';
 import { socketService } from './services/socket.service';
 import userRoutes from './routes/user.route';
 import hireRoutes from './routes/hire.route';
+import searchProvider from "./routes/providerRoute"
 import cors from "cors";
 
 // Load environment variables
@@ -51,7 +52,8 @@ mongoose
     app.use('/api/admin', adminRoutes);
     app.use('/api/users', userRoutes);
     app.use('/api/hire', hireRoutes);
-
+    app.use('/api/user', searchProvider)
+    
 
     // Start the server
     const PORT = process.env.PORT || 3000;

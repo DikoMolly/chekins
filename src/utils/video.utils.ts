@@ -2,29 +2,26 @@ import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs';
 
-// Configure ffmpeg paths - update these to your actual paths
-// For Windows, use double backslashes or forward slashes
+// Configure ffmpeg paths - updated for your setup
 if (process.platform === 'win32') {
-  // Example Windows paths - update with your actual installation path
-  ffmpeg.setFfmpegPath(
-    'C:/ffmpeg/ffmpeg-7.1.1-essentials_build/bin/ffmpeg.exe',
-  );
-  ffmpeg.setFfprobePath(
-    'C:/ffmpeg/ffmpeg-7.1.1-essentials_build/bin/ffprobe.exe',
-  );
+  // Updated to match your actual installation path
+  ffmpeg.setFfmpegPath('C:/ffmpeg/ffmpeg.exe');
+  ffmpeg.setFfprobePath('C:/ffmpeg/ffprobe.exe');
 } else {
-  // On Linux/Mac, these might be in /usr/bin or /usr/local/bin
-  // If installed via package managers, you might not need to set these
+  // For Linux/Mac systems (optional)
   // ffmpeg.setFfmpegPath('/usr/bin/ffmpeg');
   // ffmpeg.setFfprobePath('/usr/bin/ffprobe');
 }
 
 export class VideoUtils {
+  /**
+   * Generate a thumbnail from a video file
+   */
   static async generateThumbnail(videoPath: string): Promise<string> {
     const parsedPath = path.parse(videoPath);
     const thumbnailPath = path.join(
       parsedPath.dir,
-      `${parsedPath.name}_thumbnail.jpg`,
+      `${parsedPath.name}_thumbnail.jpg`
     );
 
     return new Promise((resolve, reject) => {
@@ -52,7 +49,7 @@ export class VideoUtils {
     options: {
       resolution: '480p' | '720p';
       format?: 'mp4' | 'webm';
-    },
+    }
   ): Promise<string> {
     const { resolution, format = 'mp4' } = options;
 
@@ -63,7 +60,7 @@ export class VideoUtils {
     const parsedPath = path.parse(videoPath);
     const outputPath = path.join(
       parsedPath.dir,
-      `${parsedPath.name}_${resolution}.${format}`,
+      `${parsedPath.name}_${resolution}.${format}`
     );
 
     return new Promise((resolve, reject) => {

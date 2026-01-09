@@ -9,6 +9,7 @@ export interface MediaProcessingJob {
   folder: string;
   postId: string;
   mediaIndex: number;
+  
 }
 
 // Error classification

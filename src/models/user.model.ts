@@ -55,6 +55,7 @@ const userSchema = new Schema<IUser>({
     skills: { type: [String], default: [] },
     servicesOffered: { type: [String], default: [] },
   },
+  
   // hiringSettings: {
   //   availableForHire: {
   //     type: Boolean,

@@ -3,6 +3,7 @@ import { IndividualUser } from '../models/individual.model';
 import { BusinessUser } from '../models/business.model';
 import { Role } from '../models/role.model';
 import { user as User } from '../models/user.model';
+import { v2 as cloudinary } from 'cloudinary';
 import {
   individualRegistrationSchema,
   businessRegistrationSchema,
@@ -19,6 +20,7 @@ import {
   generateRefreshToken,
   verifyToken,
 } from '../utils/jwt.utils';
+import { AuthRequest } from './../middleware/auth.middleware';
 
 export const signUp = async (req: Request, res: Response): Promise<void> => {
   const session = await mongoose.startSession();
@@ -61,7 +63,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Extract common fields
-    const { name, email, password, profilePicture, bio, location, hiringSettings } = req.body;
+    const { name, email, password, bio, location, hiringSettings } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -96,6 +98,19 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     const verificationCodeExpires = new Date();
     verificationCodeExpires.setHours(verificationCodeExpires.getHours() + 1);
 
+    // handle profile picture upload 
+    let profilePicUrl = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      const uploadRes = await cloudinary.uploader.upload(dataURI, {
+        folder: "profile_pics",
+        transformation: [{ width: 500, height: 500, crop: "fill" }]
+      });
+      profilePicUrl = uploadRes.secure_url;
+    }
+
+
     // Create base user
     const newUser = await User.create({
       name,
@@ -121,7 +136,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       const individualProfile = await IndividualUser.create({
         user: newUser._id,
         name: name,
-        profilePicture,
+        profilePicture: profilePicUrl,
         bio,
         location,
       });
@@ -141,7 +156,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
         user: newUser._id,
         companyName,
         companyEmail,
-        profilePicture,
+        profilePicture: profilePicUrl,
         bio,
         location,
         website,
@@ -197,6 +212,146 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     session.endSession();
   }
 };
+
+export const updateProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized access" })
+      return;
+    }
+
+    if (!req.file) {
+      res.status(401).json({ success: false, message: "" })
+      return;
+    }
+
+    // Validate file type (image only)
+    const allowedMime = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    if (!allowedMime.includes(req.file.mimetype)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid file type. Only JPG, PNG, and WEBP are allowed.",
+      });
+      return;
+    }
+
+    // Convert file buffer to base64
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+
+    // Upload to Cloudinary
+    const uploadRes = await cloudinary.uploader.upload(dataURI, {
+      folder: "profile_pics",
+      transformation: [{ width: 500, height: 500, crop: "fill" }],
+    });
+
+
+    const newProfileUrl = uploadRes.secure_url;
+
+    // Find user
+    const user = await User.findById(userId)
+      .populate("individualProfile")
+      .populate("businessProfile");
+
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+
+    let updatedProfile;
+
+    // Update corresponding profile (individual or business)
+    if (user.individualProfile) {
+      const profile = await IndividualUser.findById(user.individualProfile);
+      if (!profile) {
+        res.status(404).json({ success: false, message: "Profile not found" });
+        return;
+      }
+
+      // Delete old image from Cloudinary (optional but good practice)
+      if (profile.profilePicture && profile.profilePicture.includes("cloudinary")) {
+        const publicId = profile.profilePicture
+          .split("/")
+          .slice(-1)[0]
+          .split(".")[0];
+        await cloudinary.uploader.destroy(`profile_pics/${publicId}`).catch(() => { });
+      }
+
+      profile.profilePicture = newProfileUrl;
+      await profile.save();
+      updatedProfile = profile;
+    } else if (user.businessProfile) {
+      const profile = await BusinessUser.findById(user.businessProfile);
+      if (!profile) {
+        res.status(404).json({ success: false, message: "Profile not found" });
+        return;
+      }
+
+      if (profile.profilePicture && profile.profilePicture.includes("cloudinary")) {
+        const publicId = profile.profilePicture
+          .split("/")
+          .slice(-1)[0]
+          .split(".")[0];
+        await cloudinary.uploader.destroy(`profile_pics/${publicId}`).catch(() => { });
+      }
+
+      profile.profilePicture = newProfileUrl;
+      await profile.save();
+      updatedProfile = profile;
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "User does not have a valid profile type.",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      data: {
+        profilePicture: newProfileUrl,
+        profile: updatedProfile,
+      },
+    });
+  } catch (error) {
+
+  }
+}
+
+export const getUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
+    const user = await User.findById(userId)
+      .populate("individualProfile")
+      .populate("businessProfile");
+
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+
+    const profileData = user.individualProfile || user.businessProfile;
+
+    res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      data: profileData,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 
 export const verifyEmail = async (
   req: Request,

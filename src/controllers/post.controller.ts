@@ -10,6 +10,7 @@ import { Types } from 'mongoose';
 import { invalidateCache } from '../middlewares/cache.middleware';
 
 // Create a new post
+
 export const createPost = async (
   req: Request,
   res: Response,
@@ -85,19 +86,50 @@ export const createPost = async (
 };
 
 // Get all posts (with pagination)
+// Get posts (single or paginated)
 export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { id, page = '1', limit = '10' } = req.query;
+
+    // ✅ If an ID is provided, fetch that single post
+    if (id) {
+      const post = await Post.findById(id)
+        .populate('user', 'name email profilePic')
+        .populate({
+          path: 'comments',
+          options: { limit: 5, sort: { createdAt: -1 } },
+          populate: { path: 'user', select: 'name profilePic' },
+        });
+
+      if (!post) {
+        res.status(404).json({
+          success: false,
+          message: 'Post not found',
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: { post },
+      });
+      return;
+    }
+
+    // ✅ Otherwise, handle normal pagination
+    const currentPage = parseInt(page as string, 10);
+    const perPage = parseInt(limit as string, 10);
+    const skip = (currentPage - 1) * perPage;
 
     const posts = await Post.find()
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
-      .populate('user', 'name email');
+      .limit(perPage)
+      .populate('user', 'name email profilePic')
+      .lean();
 
     const total = await Post.countDocuments();
+    const totalPages = Math.ceil(total / perPage);
 
     res.status(200).json({
       success: true,
@@ -105,13 +137,14 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
         posts,
         pagination: {
           total,
-          page,
-          pages: Math.ceil(total / limit),
+          totalPages,
+          currentPage,
+          limit: perPage,
         },
       },
     });
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error('❌ Error fetching posts:', error);
     res.status(500).json({
       success: false,
       message: 'Server error while fetching posts',

@@ -156,20 +156,38 @@ export class MediaService {
   }
 
   /**
-   * Clean up temporary files with multiple retries
-   */
-  private cleanupFiles(filePaths: string[]): void {
+  * Clean up temporary files with retries (handles Windows file locks)
+  */
+  private async cleanupFiles(filePaths: string[]): Promise<void> {
+    const maxRetries = 5;
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
     for (const filePath of filePaths) {
-      try {
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+      let attempt = 0;
+      while (attempt < maxRetries) {
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+          break; // ✅ success, break out of retry loop
+        } catch (error: any) {
+          attempt++;
+          console.warn(
+            `Attempt ${attempt} to remove ${filePath} failed: ${error.message}`
+          );
+
+          if (attempt < maxRetries) {
+            await delay(500 * attempt); // backoff delay (0.5s, 1s, 1.5s...)
+          } else {
+            console.error(
+              `Failed to remove ${filePath} after ${maxRetries} attempts.`
+            );
+          }
         }
-      } catch (error) {
-        // Just log the error but don't try to retry - we'll clean up later
-        console.error(`Error removing file ${filePath}:`, error);
       }
     }
   }
+
 }
 
 export default new MediaService();

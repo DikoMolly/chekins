@@ -9,6 +9,7 @@ interface IMedia {
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
   processingError?: string;
   processingAttempts?: number;
+  
 }
 
 // Interface for Post document
@@ -23,6 +24,7 @@ export interface IPost extends Document {
   updatedAt: Date;
   version: number;
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  // visibility: 'private' | 'public';
   processedMediaCount: number;
   totalMediaCount: number;
   hasLiked?: boolean;
@@ -104,11 +106,13 @@ const PostSchema = new Schema<IPost>(
       type: Number,
       default: 0,
     },
+     
     processingStatus: {
       type: String,
       enum: ['pending', 'processing', 'completed', 'failed'],
       default: 'pending',
     },
+    // visibility: { type: String, enum: ['private', 'public'], default: 'private' },
     processedMediaCount: {
       type: Number,
       default: 0,
